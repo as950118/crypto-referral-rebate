@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: crypto_rebate
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - crypto_network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - crypto_network
+
+  web:
+    build: ../backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ../backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://postgres:password@db:5432/crypto_rebate
+      - REDIS_URL=redis://redis:6379/0
+    networks:
+      - crypto_network
+
+  celery:
+    build: ../backend
+    command: celery -A crypto_rebate worker -l info
+    volumes:
+      - ../backend:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://postgres:password@db:5432/crypto_rebate
+      - REDIS_URL=redis://redis:6379/0
+    networks:
+      - crypto_network
+
+  celery-beat:
+    build: ../backend
+    command: celery -A crypto_rebate beat -l info
+    volumes:
+      - ../backend:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://postgres:password@db:5432/crypto_rebate
+      - REDIS_URL=redis://redis:6379/0
+    networks:
+      - crypto_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  crypto_network:
+    driver: bridge 
