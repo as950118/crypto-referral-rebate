@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../utils/api';
 
 interface Exchange {
   id: number;
@@ -25,10 +25,7 @@ export const fetchExchanges = createAsyncThunk(
   'exchange/fetchExchanges',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/exchanges/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/api/v1/exchanges/list/');
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch exchanges');

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../utils/api';
 
 interface RebateTransaction {
   id: number;
@@ -36,10 +36,7 @@ export const fetchRebateTransactions = createAsyncThunk(
   'rebate/fetchTransactions',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/rebates/transactions/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/api/v1/rebates/list/');
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch transactions');

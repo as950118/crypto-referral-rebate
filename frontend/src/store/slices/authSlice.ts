@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../utils/api';
 
 interface User {
   id: number;
@@ -27,13 +27,13 @@ const initialState: AuthState = {
 
 export const login = createAsyncThunk(
   'auth/login',
-  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+  async (credentials: { username: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/auth/login/', credentials);
-      localStorage.setItem('token', response.data.token);
+      const response = await api.post('/api/v1/auth/login/', credentials);
+      // Django session 기반 인증이므로 token 대신 session 사용
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      return rejectWithValue(error.response?.data?.error || 'Login failed');
     }
   }
 );
@@ -42,8 +42,8 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData: { email: string; password: string; username: string }, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/auth/register/', userData);
-      localStorage.setItem('token', response.data.token);
+      const response = await api.post('/api/v1/auth/register/', userData);
+      // Django session 기반 인증이므로 token 대신 session 사용
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
@@ -55,15 +55,9 @@ export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No token');
-      
-      const response = await axios.get('/api/auth/user/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/api/v1/profile/');
       return response.data;
     } catch (error: any) {
-      localStorage.removeItem('token');
       return rejectWithValue('Authentication failed');
     }
   }
