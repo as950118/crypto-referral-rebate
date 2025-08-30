@@ -1,5 +1,7 @@
+
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import api from '../utils/api';
+import api from '../../utils/api';
 
 interface User {
   id: number;

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import api from '../utils/api';
+import api from '../../utils/api';
 
 interface Exchange {
   id: number;
@@ -37,10 +37,7 @@ export const configureExchangeAPI = createAsyncThunk(
   'exchange/configureAPI',
   async (data: { exchange_id: number; api_key: string; api_secret: string; passphrase?: string }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post('/api/exchanges/configure/', data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.post('/api/v1/exchanges/configure/', data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to configure API');

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import api from '../utils/api';
+import api from '../../utils/api';
 
 interface RebateTransaction {
   id: number;
@@ -48,10 +48,7 @@ export const fetchRebateStats = createAsyncThunk(
   'rebate/fetchStats',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/rebates/stats/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/api/v1/rebates/stats/');
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch stats');
