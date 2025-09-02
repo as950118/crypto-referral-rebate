@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { API_BASE_URL, IS_PRODUCTION } from '../config/environment';
+import { environment } from '../config/environment';
 
 // API 기본 설정
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: !IS_PRODUCTION, // 프로덕션에서는 CORS 이슈 방지
+  baseURL: environment.apiUrl,
+  withCredentials: !environment.production, // 프로덕션에서는 CORS 이슈 방지
   headers: {
     'Content-Type': 'application/json',
   },
