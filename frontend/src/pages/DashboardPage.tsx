@@ -40,7 +40,7 @@ const DashboardPage: React.FC = () => {
     { name: 'Jun', rebates: 2800, volume: 85000 },
   ];
 
-  const recentTransactions = transactions.slice(0, 5);
+  const recentTransactions = Array.isArray(transactions) ? transactions.slice(0, 5) : [];
 
   const statsCards = [
     {
@@ -220,19 +220,19 @@ const DashboardPage: React.FC = () => {
                 </div>
               ) : recentTransactions.length > 0 ? (
                 recentTransactions.map((transaction, index) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={transaction.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
                         <Activity size={20} className="text-primary-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{transaction.exchange}</p>
-                        <p className="text-sm text-gray-500">{transaction.currency}</p>
+                        <p className="font-medium text-gray-900">{transaction.exchange || 'Unknown Exchange'}</p>
+                        <p className="text-sm text-gray-500">{transaction.currency || 'USD'}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-gray-900">${transaction.amount}</p>
-                      <p className="text-sm text-gray-500">{transaction.status}</p>
+                      <p className="font-medium text-gray-900">${transaction.amount || '0.00'}</p>
+                      <p className="text-sm text-gray-500">{transaction.status || 'Unknown'}</p>
                     </div>
                   </div>
                 ))

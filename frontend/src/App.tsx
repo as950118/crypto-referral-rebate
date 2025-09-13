@@ -36,9 +36,8 @@ const App: React.FC = () => {
   const { isAuthenticated, loading } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    if (localStorage.getItem('token')) {
-      dispatch(getCurrentUser());
-    }
+    // 세션 기반 인증이므로 항상 현재 사용자 확인
+    dispatch(getCurrentUser());
   }, [dispatch]);
 
   if (loading) {

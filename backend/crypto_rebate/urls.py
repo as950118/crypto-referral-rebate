@@ -21,6 +21,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),  # allauth URL 추가
     path('api/v1/', include('crypto_rebate.apps.users.urls')),
     path('api/v1/exchanges/', include('crypto_rebate.apps.exchanges.urls')),
     path('api/v1/rebates/', include('crypto_rebate.apps.rebates.urls')),

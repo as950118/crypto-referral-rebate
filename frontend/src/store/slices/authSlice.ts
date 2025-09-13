@@ -1,5 +1,8 @@
 
 
+
+
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import api from '../../utils/api';
 
@@ -22,7 +25,7 @@ interface AuthState {
 const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  isAuthenticated: false, // 초기에는 false로 설정, getCurrentUser로 확인
   loading: false,
   error: null,
 };
@@ -49,6 +52,18 @@ export const register = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
+    }
+  }
+);
+
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (credential: string, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/api/v1/auth/google/', { credential });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Google login failed');
     }
   }
 );
@@ -89,8 +104,11 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.token = action.payload.token || 'session-token';
         state.isAuthenticated = true;
+        if (state.token) {
+          localStorage.setItem('token', state.token);
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -104,10 +122,31 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.token = action.payload.token || 'session-token';
         state.isAuthenticated = true;
+        if (state.token) {
+          localStorage.setItem('token', state.token);
+        }
       })
       .addCase(register.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Google Login
+      .addCase(googleLogin.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token || 'google-auth-token';
+        state.isAuthenticated = true;
+        if (state.token) {
+          localStorage.setItem('token', state.token);
+        }
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

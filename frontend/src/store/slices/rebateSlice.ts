@@ -73,7 +73,17 @@ const rebateSlice = createSlice({
       })
       .addCase(fetchRebateTransactions.fulfilled, (state, action) => {
         state.loading = false;
-        state.transactions = action.payload;
+        // API 응답이 배열이거나 객체 안에 배열이 있을 수 있음
+        const payload = action.payload;
+        if (Array.isArray(payload)) {
+          state.transactions = payload;
+        } else if (payload && Array.isArray(payload.results)) {
+          state.transactions = payload.results;
+        } else if (payload && Array.isArray(payload.recent_rebates)) {
+          state.transactions = payload.recent_rebates;
+        } else {
+          state.transactions = [];
+        }
       })
       .addCase(fetchRebateTransactions.rejected, (state, action) => {
         state.loading = false;
@@ -86,7 +96,23 @@ const rebateSlice = createSlice({
       })
       .addCase(fetchRebateStats.fulfilled, (state, action) => {
         state.loading = false;
-        state.stats = action.payload;
+        // API 응답에서 statistics 객체를 추출하거나 직접 사용
+        const payload = action.payload;
+        if (payload.statistics) {
+          state.stats = {
+            total_rebates: `$${payload.statistics.total_earnings || 0}`,
+            monthly_rebates: `$${payload.statistics.monthly_earnings || 0}`,
+            total_transactions: payload.statistics.total_transactions || 0,
+            monthly_transactions: 0 // API에서 제공하지 않음
+          };
+        } else {
+          state.stats = {
+            total_rebates: `$${payload.total_earnings || 0}`,
+            monthly_rebates: `$${payload.monthly_earnings || 0}`,
+            total_transactions: payload.total_transactions || 0,
+            monthly_transactions: 0
+          };
+        }
       })
       .addCase(fetchRebateStats.rejected, (state, action) => {
         state.loading = false;

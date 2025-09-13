@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-sm)cxnpib$h&mnmck)%0sm#7bv=-ygx1tpn$bd46mtj89a++ux'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-sm)cxnpib$h&mnmck)%0sm#7bv=-ygx1tpn$bd46mtj89a++ux')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -37,10 +42,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',  # allauth를 위해 필요
     
     # Third party apps
     'rest_framework',
     'corsheaders',
+    'allauth',  # 소셜 로그인을 위한 allauth
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',  # Google OAuth
     
     # Local apps
     'crypto_rebate.apps.users',
@@ -58,6 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # allauth 미들웨어 추가
 ]
 
 ROOT_URLCONF = 'crypto_rebate.urls'
@@ -172,6 +183,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # 개발 환경에서만 모든 오리진 허용
 
 # Celery Configuration
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
@@ -205,3 +217,54 @@ LOGGING = {
         },
     },
 }
+
+# Authentication settings
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SITE_ID = 1
+
+# Allauth settings
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
+
+# Google OAuth settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+        'APP': {
+            'client_id': os.getenv('GOOGLE_OAUTH2_CLIENT_ID', ''),
+            'secret': os.getenv('GOOGLE_OAUTH2_CLIENT_SECRET', ''),
+        }
+    }
+}
+
+# Social account settings
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = False
+SOCIALACCOUNT_EMAIL_VERIFICATION = False
+
+# Google OAuth 추가 설정
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+# Frontend URL for redirects
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+
+# allauth 로그인 후 리다이렉트 설정
+LOGIN_REDIRECT_URL = f'{FRONTEND_URL}/dashboard'
+LOGOUT_REDIRECT_URL = f'{FRONTEND_URL}/'
+ACCOUNT_LOGOUT_REDIRECT_URL = f'{FRONTEND_URL}/'

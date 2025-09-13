@@ -29,3 +29,6 @@ class UserAdmin(BaseUserAdmin):
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+
+# SocialApp은 allauth에서 이미 등록되어 있으므로 추가 등록 불필요

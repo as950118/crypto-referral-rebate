@@ -4,7 +4,7 @@ import { environment } from '../config/environment';
 // API 기본 설정
 const api = axios.create({
   baseURL: environment.apiUrl,
-  withCredentials: !environment.production, // 프로덕션에서는 CORS 이슈 방지
+  withCredentials: true, // 세션 기반 인증을 위해 항상 true
   headers: {
     'Content-Type': 'application/json',
   },
@@ -12,8 +12,18 @@ const api = axios.create({
 
 // 요청 인터셉터
 api.interceptors.request.use(
-  (config) => {
-    // CSRF 토큰이 필요한 경우 여기서 추가
+  async (config) => {
+    // CSRF 토큰 가져오기
+    if (config.method !== 'get') {
+      try {
+        const csrfResponse = await axios.get(`${environment.apiUrl}/api/v1/csrf/`, {
+          withCredentials: true
+        });
+        config.headers['X-CSRFToken'] = csrfResponse.data.csrfToken;
+      } catch (error) {
+        console.warn('CSRF token could not be retrieved:', error);
+      }
+    }
     return config;
   },
   (error) => {

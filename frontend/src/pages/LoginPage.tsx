@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
-import { login, clearError } from '../store/slices/authSlice';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { login, clearError, googleLogin } from '../store/slices/authSlice';
 import { AppDispatch, RootState } from '../store';
 import api from '../utils/api';
+import { environment } from '../config/environment';
 
 const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -16,11 +17,24 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  // Google Client ID 확인
+  useEffect(() => {
+    console.log('🔍 Environment check:');
+    console.log('REACT_APP_GOOGLE_CLIENT_ID:', process.env.REACT_APP_GOOGLE_CLIENT_ID);
+    console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+    console.log('Google Client ID from environment:', environment.googleClientId);
+    
+    if (!process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+      console.warn('⚠️ Google Client ID가 설정되지 않았습니다!');
+    }
+  }, []);
+
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { loading, error, isAuthenticated, user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
+    // 백업용: Redux 상태가 업데이트되면 자동으로 리다이렉트
     if (isAuthenticated) {
       navigate('/dashboard');
     }
@@ -52,8 +66,11 @@ const LoginPage: React.FC = () => {
     
     if (validateForm()) {
       try {
-        await dispatch(login(formData)).unwrap();
-        navigate('/dashboard');
+        const result = await dispatch(login(formData)).unwrap();
+        // 로그인 성공 시 즉시 대시보드로 리다이렉트
+        if (result && result.user) {
+          navigate('/dashboard');
+        }
       } catch (error) {
         // Error is handled by Redux
       }
@@ -68,6 +85,28 @@ const LoginPage: React.FC = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    try {
+      if (!credentialResponse.credential) {
+        console.error('No credential received from Google');
+        return;
+      }
+      
+      const result = await dispatch(googleLogin(credentialResponse.credential)).unwrap();
+      
+      // 로그인 성공 시 즉시 대시보드로 리다이렉트
+      if (result && result.user) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Google login failed:', error);
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.error('Google login failed');
   };
 
   return (
@@ -217,43 +256,14 @@ const LoginPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <GoogleLogin
-                onSuccess={async (credentialResponse) => {
-                  try {
-                    const response = await api.post('/api/v1/auth/google/', {
-                      credential: credentialResponse.credential
-                    });
-                    // 로그인 성공 시 처리
-                    if (response.data.user) {
-                      // Redux store에 사용자 정보 저장
-                      // 여기서는 간단하게 localStorage에 저장
-                      localStorage.setItem('token', response.data.token || 'google-auth');
-                      localStorage.setItem('user', JSON.stringify(response.data.user));
-                      navigate('/dashboard');
-                    }
-                  } catch (error) {
-                    console.error('Google login failed:', error);
-                    // 에러 처리
-                  }
-                }}
-                onError={() => {
-                  console.log('Google Login Failed');
-                }}
-                useOneTap
-                theme="outline"
-                size="large"
-                text="continue_with"
-                shape="rectangular"
-                width="100%"
-              />
-
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-                </svg>
-                <span className="ml-2">Twitter</span>
-              </button>
+            <div className="mt-6">
+              {/* Google 로그인 버튼 - React OAuth 사용 */}
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                />
+              </div>
             </div>
           </div>
 
