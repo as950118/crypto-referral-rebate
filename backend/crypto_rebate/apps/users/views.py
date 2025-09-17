@@ -256,9 +256,11 @@ def get_csrf_token(request):
     }, status=status.HTTP_200_OK)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class GoogleLoginView(APIView):
     """Google OAuth 로그인 API"""
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []  # CSRF 토큰 없이도 접근 가능하도록 설정
     
     def post(self, request):
         try:

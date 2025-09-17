@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
-import { login, clearError, googleLogin } from '../store/slices/authSlice';
+import { login, clearError, googleLogin, getCurrentUser } from '../store/slices/authSlice';
 import { AppDispatch, RootState } from '../store';
 import api from '../utils/api';
 import { environment } from '../config/environment';
@@ -66,12 +66,18 @@ const LoginPage: React.FC = () => {
     
     if (validateForm()) {
       try {
+        console.log('🔄 Starting regular login process...');
         const result = await dispatch(login(formData)).unwrap();
-        // 로그인 성공 시 즉시 대시보드로 리다이렉트
-        if (result && result.user) {
-          navigate('/dashboard');
-        }
+        
+        console.log('✅ Regular login successful:', result);
+        
+        // 로그인이 성공했으면 항상 getCurrentUser를 호출하여 상태 업데이트
+        console.log('🔄 Refreshing user data...');
+        await dispatch(getCurrentUser());
+        // useEffect에서 isAuthenticated 변화를 감지하여 자동 리다이렉트됨
+        
       } catch (error) {
+        console.error('❌ Regular login failed:', error);
         // Error is handled by Redux
       }
     }
@@ -94,14 +100,22 @@ const LoginPage: React.FC = () => {
         return;
       }
       
+      console.log('🔄 Starting Google login process...');
+      console.log('Credential length:', credentialResponse.credential.length);
+      
       const result = await dispatch(googleLogin(credentialResponse.credential)).unwrap();
       
-      // 로그인 성공 시 즉시 대시보드로 리다이렉트
-      if (result && result.user) {
-        navigate('/dashboard');
-      }
+      console.log('✅ Google login successful:', result);
+      
+      // 구글 로그인이 성공했으면 항상 getCurrentUser를 호출하여 상태 업데이트
+      // 이렇게 하면 result의 내용에 관계없이 확실히 인증 상태가 업데이트됨
+      console.log('🔄 Refreshing user data...');
+      await dispatch(getCurrentUser());
+      // useEffect에서 isAuthenticated 변화를 감지하여 자동 리다이렉트됨
+      
     } catch (error) {
-      console.error('Google login failed:', error);
+      console.error('❌ Google login failed:', error);
+      console.error('Error details:', error);
     }
   };
 

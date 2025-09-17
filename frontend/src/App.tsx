@@ -40,6 +40,11 @@ const App: React.FC = () => {
     dispatch(getCurrentUser());
   }, [dispatch]);
 
+  // 인증 상태가 변경될 때마다 로그 출력 (디버깅용)
+  useEffect(() => {
+    console.log('Auth state changed:', { isAuthenticated, loading });
+  }, [isAuthenticated, loading]);
+
   if (loading) {
     return <LoadingSpinner />;
   }

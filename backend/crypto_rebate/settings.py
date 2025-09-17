@@ -185,6 +185,17 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # 개발 환경에서만 모든 오리진 허용
 
+# CSRF 설정
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# 개발 환경에서 CSRF 쿠키 설정
+CSRF_COOKIE_SECURE = False  # 개발 환경에서는 False
+CSRF_COOKIE_HTTPONLY = False  # JavaScript에서 접근 가능하도록
+CSRF_COOKIE_SAMESITE = 'Lax'
+
 # Celery Configuration
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'

@@ -60,10 +60,26 @@ export const googleLogin = createAsyncThunk(
   'auth/googleLogin',
   async (credential: string, { rejectWithValue }) => {
     try {
-      const response = await api.post('/api/v1/auth/google/', { credential });
-      return response.data;
+      // CSRF 토큰 없이 직접 요청
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/auth/google/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // 쿠키 포함
+        body: JSON.stringify({ credential }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || 'Google login failed');
+      console.error('Google login API error:', error);
+      return rejectWithValue(error.message || 'Google login failed');
     }
   }
 );
